@@ -2,7 +2,6 @@ package redfishmetricreport
 
 import (
 	"log"
-	"fmt"
 	"crypto/tls"
 	"net/http"
 	"encoding/json"
@@ -139,15 +138,18 @@ func getReportList(target string, username string, password string) []string {
 }
 
 func getConfigForTarget(target string, config Config) (string, string, error) {
-	var msg string
 
 	for _, idrac := range config.Idracs {
 		if idrac.IpAddress == target {
 			return idrac.Username, idrac.Password, nil
 		}
 	}
-	fmt.Sprintf(msg, "Error: Target %s not found in configuration", target)
-	return "", "", errors.New(msg)
+	log.Printf("%s:\tgetConfigForTarget:\tDidn't find specific username and password for target, using global setting", target)
+	if config.GlobalConfig.Username != "" && config.GlobalConfig.Password != "" {
+		return config.GlobalConfig.Username, config.GlobalConfig.Password, nil
+	} else {
+		return "", "", errors.New("Error: no global or local username and password defined")
+	}
 }
 
 func Probe(target string, config Config, registry *prometheus.Registry) bool {
@@ -158,7 +160,7 @@ func Probe(target string, config Config, registry *prometheus.Registry) bool {
 	username, password, err := getConfigForTarget(target, config)
 	if err != nil {
 		log.Printf("%s:\tProbe:\tError getting username and password for target %s, err = %v", target, target, err)
-		log.Fatal(err)
+		return false
 	}
 	reports := getReportList(target, username, password)
 	for _, report := range reports {
