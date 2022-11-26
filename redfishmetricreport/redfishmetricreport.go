@@ -2,23 +2,16 @@ package redfishmetricreport
 
 import (
 	"log"
+	"fmt"
 	"crypto/tls"
 	"net/http"
 	"encoding/json"
 	"strconv"
 	"errors"
 	"strings"
-//	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
-//	"github.com/prometheus/client_golang/prometheus/collectors"
 )
-
-var (
-	username = "username"
-	password = "password"
-)
-
 
 var collectors map[string]map[string]*prometheus.GaugeVec
 
@@ -32,7 +25,6 @@ func addGauge(target string, metricValue MetricValue, reportName string, service
 		collectors[target] = make(map[string]*prometheus.GaugeVec)
 	}
 //	log.Printf("%s:\taddGauge:\tChecking to see if key %s exists in collectors map %+v", target, metricValue.MetricId, collectors[target])
-//	contextID := strings.Replace(metricValue.Oem.Dell.ContextID, " ", "", -1)
 	_, keyExists := collectors[target][metricValue.MetricId]
 	if keyExists == false {
 //		log.Printf("%s:\taddGauge:\tNo entry in collector for metricId %s, creating gauge", target, metricValue.MetricId)
@@ -62,8 +54,6 @@ func addGauge(target string, metricValue MetricValue, reportName string, service
 		log.Printf("%s:\taddGauge:\tSetting value for serviceTag %s, with FQDD %s, metric %s to %.2f", target, serviceTag, metricValue.Oem.Dell.FQDD, metricValue.MetricId, floatVal)
 		gauge.WithLabelValues(target, serviceTag, metricValue.MetricId, metricValue.Oem.Dell.FQDD).Set(floatVal)
 		collectors[target][metricValue.MetricId] = gauge
-		//	}
-//	if collectors["FQDD"][metricValue.MetricId] == nil {
 	} else {
 //		log.Printf("%s:\taddGauge:\tKey %s already exists, adding new metric to gauge", target, metricValue.MetricId)
 		gauge := collectors[target][metricValue.MetricId]
@@ -73,7 +63,7 @@ func addGauge(target string, metricValue MetricValue, reportName string, service
 	}
 }
 
-func getMetricReport(target string, reportURL string) MetricReport {
+func getMetricReport(target string, reportURL string, username string, password string) MetricReport {
 	var metricReport MetricReport
 	
 	log.Printf("%s:\tgetMetricReport:\tCalled getMetricReport for report %s", target, reportURL)
@@ -109,7 +99,7 @@ func getMetricReport(target string, reportURL string) MetricReport {
 	return metricReport
 }
 
-func getReportList(target string) []string {
+func getReportList(target string, username string, password string) []string {
 	var metricReportList MetricReportList
 	var reports []string = make([]string, 0)
 
@@ -148,15 +138,32 @@ func getReportList(target string) []string {
 	return reports
 }
 
-func Probe(target string, registry *prometheus.Registry) bool {
+func getConfigForTarget(target string, config Config) (string, string, error) {
+	var msg string
+
+	for _, idrac := range config.Idracs {
+		if idrac.IpAddress == target {
+			return idrac.Username, idrac.Password, nil
+		}
+	}
+	fmt.Sprintf(msg, "Error: Target %s not found in configuration", target)
+	return "", "", errors.New(msg)
+}
+
+func Probe(target string, config Config, registry *prometheus.Registry) bool {
 	metricReports := make(map[string][]MetricReport)
 	collectors = make(map[string]map[string]*prometheus.GaugeVec)
 //	log.Printf("%s:\tredfishmetricreport.Probe:\tGetting reports from target %s", target, target)
 
-	reports := getReportList(target)
+	username, password, err := getConfigForTarget(target, config)
+	if err != nil {
+		log.Printf("%s:\tProbe:\tError getting username and password for target %s, err = %v", target, target, err)
+		log.Fatal(err)
+	}
+	reports := getReportList(target, username, password)
 	for _, report := range reports {
 //		log.Printf("%s:\tredfishmetricreport.Probe:\tGetting report %s", target, report)
-		metricReport := getMetricReport(target, report)
+		metricReport := getMetricReport(target, report, username, password)
 		_, keyExists := metricReports[target]
 		if keyExists == false {
 			metricReports[target] = make([]MetricReport, 0)

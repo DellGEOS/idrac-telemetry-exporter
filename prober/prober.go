@@ -12,7 +12,7 @@ import (
 	"idrac_telemetry_exporter/redfishmetricreport"
 )
 
-func Handler(w http.ResponseWriter, req *http.Request, params url.Values) {
+func Handler(w http.ResponseWriter, req *http.Request, config redfishmetricreport.Config, params url.Values) {
 	if params == nil {
 		params = req.URL.Query()
 	}
@@ -37,7 +37,7 @@ func Handler(w http.ResponseWriter, req *http.Request, params url.Values) {
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(probeSuccessGauge)
 	registry.MustRegister(probeDurationGauge)
-	success := redfishmetricreport.Probe(target, registry)
+	success := redfishmetricreport.Probe(target, config, registry)
 	duration := time.Since(start).Seconds()
 	probeDurationGauge.Set(duration)
 	if success {
