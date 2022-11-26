@@ -3,7 +3,7 @@
 iDRAC is the Baseboard Management Computer (BMC) embedded in all Dell PowerEdge servers. The iDRAC offers a telemetry streaming service to export and expose numerous metrics pertaining to the health and performance of the server.
 
 Prometheus is the de-facto standard for collecting metrics within Kubernetes environments. Prometheus works on the basis of scraping data from exporters. 
-This exporter collects metrics from the iDRAC telemetry streaming service and exposes them to Prometheus to scrape. It uses Redfish endpoint to gather the metrics and gathers metrics from all the enabled metric report.
+This exporter collects metrics from the iDRAC telemetry streaming service and exposes them to Prometheus to scrape. It uses Redfish endpoint to gather the metrics and gathers metrics from all the enabled metric report. The iDRAC telemetry streaming service requires iDRAC Datacenter license to be enabled.
 
 ## Running the exporter
 The easiest way to run the iDRAC Telemetry exporter is by leveraging the docker container for this exporter. 
@@ -53,6 +53,9 @@ To configure Prometheus to scrape the exporter endpoint, the following lines wil
         replacement: <exporter ip address>:3355
 ```
 Because the exporter is pulling all the redfish reports for each scrape, it is recommended not to use a scrape interval lower than 2 minutes. Pulling all the redfish reports and processing them takes around 30 seconds, hence the recommended timeout value of 45 seconds.
+
+## Grafana Dashboard
+A Grafana dashboard was created to visualize the metrics pulled from the iDRAC Telemetry Streaming service. The json definition for the dashboard is included in the `grafana` directory of this repo. The json model can be imported to any Grafana installation.
 
 ## License
 
