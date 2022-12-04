@@ -140,6 +140,7 @@ func getReportList(target string, username string, password string) []string {
 func getConfigForTarget(target string, config Config) (string, string, error) {
 
 	for _, idrac := range config.Idracs {
+//		log.Printf("%s:\tgetConfigForTarget:\tidrac = %v, ipAddress = %s, target = %s", target, idrac, idrac.IpAddress, target)
 		if idrac.IpAddress == target {
 			return idrac.Username, idrac.Password, nil
 		}

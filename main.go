@@ -37,6 +37,7 @@ func main() {
 		log.Printf("main: Error unmarshaling config data, err = %v", err)
 		log.Fatal(err)
 	}
+//	log.Printf("main: configData = %s and config = %v", configData, config)
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/probe", func(w http.ResponseWriter, req *http.Request) {
 		prober.Handler(w, req, config, nil)

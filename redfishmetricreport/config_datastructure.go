@@ -11,7 +11,7 @@ type GlobalConfig struct {
 }
 
 type IdracConfig struct {
-	IpAddress string `yaml:"address"`
+	IpAddress string `yaml:"ipAddress"`
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 }
